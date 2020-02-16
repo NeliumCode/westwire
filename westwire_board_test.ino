@@ -12,6 +12,10 @@ static unsigned long timecount = millis();                    // Counter to rese
 unsigned int channel = 1;
 int mqttConnectionFailures = 0;
 long lastReconnectAttempt = 0;
+String ID = String(ESP.getChipId(), HEX);
+const char* charId = ID.c_str();
+String connMsg=String("Sensor " + ID + "connected");
+const char* charConnMsg=connMsg.c_str();
 
 // Set serial for for AT commands (to the module)
 #define SerialAT Serial
@@ -58,6 +62,7 @@ const char* topicData = "ivanlab/westwire/S";
 const char* topicCtrl = "ivanlab/westwire/C";
 const char* topicRx = "ivanlab/westwire/CC";
 
+
 #include <TinyGsmClient.h>
 
 #ifdef DUMP_AT_COMMANDS
@@ -91,10 +96,12 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
 
 boolean mqttConnect() {
   SerialMon.print(F("Connecting to "));
-  SerialMon.print(broker);
+  SerialMon.println(broker);
+
+
 
   // Connect to MQTT Broker
-  boolean status = mqtt.connect("westwire_sensor_###");
+  boolean status = mqtt.connect(charId);
 
   // Or, if you want to authenticate MQTT:
   //boolean status = mqtt.connect("GsmClientName", "mqtt_user", "mqtt_pass");
@@ -107,7 +114,7 @@ boolean mqttConnect() {
     return false;
   }
   SerialMon.println(F(" successfully connected MQTT"));
-  mqtt.publish(topicCtrl, "Sensor ### connected");
+  mqtt.publish(topicCtrl,charConnMsg);
   mqtt.subscribe(topicRx);
   return mqtt.connected();
 }
@@ -134,8 +141,8 @@ void setup() {
   SerialMon.println(F("Wait for initialization..."));
   
   // Set GSM module baud rate
-  // TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
-  SerialAT.begin(9600);
+  TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
+  SerialAT.begin(115200);
   delay(10000);
 
   // Restart takes quite some time
