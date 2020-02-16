@@ -12,6 +12,7 @@
 static unsigned long timecount = millis();                    // Counter to reset client count
 unsigned int channel = 1;
 int ledStatus = LOW;
+int mqttConnectionFailureCounter = 0;
 
 
 // Set serial for for AT commands (to the module)
@@ -121,6 +122,9 @@ boolean mqttConnect() {
 
   if (status == false) {
     SerialMon.println(F(" fail connecting MQTT"));
+    mqttConnectionFailureCounter++;
+    SerialMon.println(" MQTT connectio failures="+mqttConnectionFailureCounter);
+    if (mqttConnectionFailureCounter>3) reboot;
     return false;
   }
   SerialMon.println(F(" successfully connected MQTT"));
@@ -129,6 +133,11 @@ boolean mqttConnect() {
   return mqtt.connected();
 }
 
+void reboot() {
+          SerialMon.println(F("*****REBOOT*****"));
+          SerialAT.println("AT+CFUN=16");
+          ESP.restart();
+}
 #include "./functions2.h"
 
 
@@ -285,7 +294,7 @@ void loop() {
                transmision += "\"}";
                transmision.toCharArray(buffer, transmision.length()+1);
                   if(mqtt.connected()) {
-                      mqtt.publish("vanlab/westwire",buffer);
+                      mqtt.publish("ivanlab/westwire",buffer);
                       SerialMon.println (transmision);
                     }else{
                       SerialMon.println ("MQTT NO FUNCIONA");
