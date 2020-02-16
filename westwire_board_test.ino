@@ -14,7 +14,7 @@ int mqttConnectionFailures = 0;
 long lastReconnectAttempt = 0;
 String ID = String(ESP.getChipId(), HEX);
 const char* charId = ID.c_str();
-String connMsg=String("Sensor " + ID + " connected");
+String connMsg=String("Sensor " + ID + " connected - "+VERSION);
 const char* charConnMsg=connMsg.c_str();
 
 // Set serial for for AT commands (to the module)
@@ -97,8 +97,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
 boolean mqttConnect() {
   SerialMon.print(F("Connecting to "));
   SerialMon.println(broker);
-
-
 
   // Connect to MQTT Broker
   boolean status = mqtt.connect(charId);
