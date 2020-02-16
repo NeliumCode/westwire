@@ -35,7 +35,7 @@ static unsigned long timed = millis();
 #define MQTT_SN_FLAG_RETAIN           (0x1 << 4)
 #define MQTT_SN_TOPIC_TYPE_SHORT      (0x02)
 
-
+/*
 // MQTT-SN Message encapsulation and sending
 void sendMessage(const char topic[2], byte message[], int messageSize, bool retain=false) {
   uint8_t payload[messageSize+8];                // Total size of MQTT-SN packet to be sent
@@ -85,7 +85,9 @@ void sendMessage(const char topic[2], byte message[], int messageSize, bool reta
   //SerialMon.print("Caracteres enviados:"); //SerialMon.println(ndx+3);
   //SerialMon.println();
 }
+*/
 
+/*
 // Send array of clientinfo stored to MQTT evey n seconds
 void sendArrayOfClients (){
   int length=clients_known_count*(ETH_MAC_LEN+1+4);   //+1 for the rssi +4 time
@@ -102,8 +104,9 @@ void sendArrayOfClients (){
   } //SerialMon.println();
   clients_known_count=0;
   
-  mqtt.publish(topicInit, message);
+  mqtt.publish(topicData, message);
 }
+*/
 
 // STORE Known APs
 int register_beacon(beaconinfo beacon)

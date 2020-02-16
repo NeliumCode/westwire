@@ -3,17 +3,15 @@
 #include <WiFi.h>
 
 #define OE      D1
-#define LED_PIN D7
-#define window      300
+#define DCDC    D2
 #define VERSION     "v1.0"
 #define disable 0
 #define TINY_GSM_MODEM_UBLOX
 
 static unsigned long timecount = millis();                    // Counter to reset client count
 unsigned int channel = 1;
-int ledStatus = LOW;
-int mqttConnectionFailureCounter = 0;
-
+int mqttConnectionFailures = 0;
+long lastReconnectAttempt = 0;
 
 // Set serial for for AT commands (to the module)
 #define SerialAT Serial
@@ -26,7 +24,7 @@ int mqttConnectionFailureCounter = 0;
 // SoftwareSerial SerialMon(D6, D2); // RX, TX
 
 // See all AT commands, if wanted
-//#define DUMP_AT_COMMANDS 
+#define DUMP_AT_COMMANDS 
 
 // Define the serial console for debug prints, if needed
 // #define TINY_GSM_DEBUG SerialMon
@@ -56,42 +54,23 @@ const char gprsPass[] = "";
 
 // MQTT details
 const char* broker = "mqtt.ivanlab.org";
-const char* topicLed = "westwire/led";
-const char* topicInit = "westwire/init";
-const char* topicLedStatus = "westwire/ledStatus";
-int mqttRebootCounter = 0;
+const char* topicData = "ivanlab/westwire/S";
+const char* topicCtrl = "ivanlab/westwire/C";
+const char* topicRx = "ivanlab/westwire/CC";
 
 #include <TinyGsmClient.h>
-
-
-// Just in case someone defined the wrong thing..
-#if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
-#undef TINY_GSM_USE_GPRS
-#undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS false
-#define TINY_GSM_USE_WIFI true
-#endif
-#if TINY_GSM_USE_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_GPRS
-#undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS true
-#define TINY_GSM_USE_WIFI false
-#endif
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
   StreamDebugger debugger(SerialAT, SerialMon);
   TinyGsm modem(debugger);
 #else
-TinyGsm modem(SerialAT);
+  TinyGsm modem(SerialAT);
 #endif
 
 TinyGsmClient client(modem);
 #include <PubSubClient.h>
 PubSubClient mqtt(client);
-
-
-long lastReconnectAttempt = 0;
 
 void mqttCallback(char* topic, byte* payload, unsigned int len) {
   SerialMon.print("Message arrived [");
@@ -115,37 +94,39 @@ boolean mqttConnect() {
   SerialMon.print(broker);
 
   // Connect to MQTT Broker
-  boolean status = mqtt.connect("westwire");
+  boolean status = mqtt.connect("westwire_sensor_###");
 
   // Or, if you want to authenticate MQTT:
   //boolean status = mqtt.connect("GsmClientName", "mqtt_user", "mqtt_pass");
 
   if (status == false) {
-    SerialMon.println(F(" fail connecting MQTT"));
-    mqttConnectionFailureCounter++;
-    SerialMon.println(" MQTT connectio failures="+mqttConnectionFailureCounter);
-    if (mqttConnectionFailureCounter>3) reboot;
+    SerialMon.println(F("....fail connecting MQTT"));
+    mqttConnectionFailures++;
+    SerialMon.print(" MQTT connection failures=");SerialMon.println(mqttConnectionFailures);
+    if (mqttConnectionFailures>=3) reboot();
     return false;
   }
   SerialMon.println(F(" successfully connected MQTT"));
-  mqtt.publish("ivanlab/westwire", "westwire started");
-  mqtt.subscribe(topicLed);
+  mqtt.publish(topicCtrl, "Sensor ### connected");
+  mqtt.subscribe(topicRx);
   return mqtt.connected();
 }
 
 void reboot() {
           SerialMon.println(F("*****REBOOT*****"));
-          SerialAT.println("AT+CFUN=16");
+          digitalWrite(DCDC,LOW);
+          delay(3000);
           ESP.restart();
 }
-#include "./functions2.h"
 
+#include "./functions2.h"
 
 void setup() {
 
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(OE,OUTPUT);               
-  digitalWrite(OE,LOW);            
+  pinMode(OE,OUTPUT);
+  pinMode(DCDC,OUTPUT);               
+  digitalWrite(OE,LOW);                           
+  digitalWrite(DCDC,HIGH);            
 
   SerialMon.begin(9600);
   delay(10);
@@ -155,13 +136,16 @@ void setup() {
   // Set GSM module baud rate
   // TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
   SerialAT.begin(9600);
-  delay(3000);
+  delay(10000);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   SerialMon.println(F("Initializing modem..."));
-  modem.restart();
-  // modem.init();
+  
+  if (!modem.restart()) {
+    SerialMon.println ("Failed to restart modem, retrying");
+    reboot();
+  }
 
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem Info: ");
@@ -206,7 +190,7 @@ void setup() {
     if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
       SerialMon.println(" fail");
       delay(10000);
-      return;
+      reboot();
     }
   SerialMon.println(F(" Successfully established APN context"));
 
@@ -253,11 +237,10 @@ void setup() {
 
 }
 
-
 void loop() {
-
- SerialMon.println("Empieza escaneo wifi");
-   channel = 1;
+// Looping through 2.4 GHz channels
+  SerialMon.println(F("Scanning Wifi Channels"));
+  channel = 1;
   wifi_set_channel(channel);
   while (true) {
     nothing_new++;                     // Array is not finite, check bounds and adjust if required
@@ -268,14 +251,11 @@ void loop() {
       wifi_set_channel(channel);
     }
     delay(1);                         // critical processing timeslice for NONOS SDK! No delay(0) yield()
-   
   }
- SerialMon.println("acaba bucle True");
-
+// Checking transmission timer >> MQTT sending
  unsigned long t = millis();
  SerialMon.println("millis - lastReconnect =" + String(t- lastReconnectAttempt));
-    if (t - lastReconnectAttempt > 15000L) {
-            mqttConnect();
+    if (t - lastReconnectAttempt > 60000L) {
             lastReconnectAttempt = t;
             char buffer[35];
 
@@ -289,48 +269,18 @@ void loop() {
                           transmision += String(clients_known[u].station[i], HEX);
                         }
                        if (i<5) transmision += ":";
-
-                }
+                    }
                transmision += "\"}";
                transmision.toCharArray(buffer, transmision.length()+1);
+               if(!mqtt.connected()) mqttConnect();
                   if(mqtt.connected()) {
-                      mqtt.publish("ivanlab/westwire",buffer);
+                      mqtt.publish(topicData,buffer);
                       SerialMon.println (transmision);
                     }else{
-                      SerialMon.println ("MQTT NO FUNCIONA");
+                      SerialMon.println (F("NETWORK PROBLEMS - MQTT NOT RESPONDING"));
                     }
-
                }
-              
-            
             clients_known_count=0;
-            
             }
-
- 
-
-/*
-   if (!mqtt.connected()) {
-    SerialMon.println("=== MQTT NOT CONNECTED ===");
-    // Reconnect every 10 seconds
-    unsigned long t = millis();
-    if (t - lastReconnectAttempt > 10000L) {
-      lastReconnectAttempt = t;
-      if (mqttConnect()) {
-        lastReconnectAttempt = 0;
-      }else{
-        mqttRebootCounter++;
-        SerialMon.println("mqttRebootCounter="+mqttRebootCounter);
-        if (mqttRebootCounter>10){ 
-          SerialAT.println("AT+CFUN=16");
-          ESP.restart();
-          }
-      }
-    }
-    delay(100);
-    return;
-  }
-  */
-  
  mqtt.loop();
 }
