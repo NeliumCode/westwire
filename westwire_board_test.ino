@@ -262,7 +262,7 @@ void loop() {
 // Checking transmission timer >> MQTT sending
  unsigned long t = millis();
  //SerialMon.println("millis - lastReconnect =" + String(t- lastReconnectAttempt));
-    if (t - lastReconnectAttempt > 60000L) {
+    if (t - lastReconnectAttempt > 300000L) {
             lastReconnectAttempt = t;
             char buffer[35];
 
