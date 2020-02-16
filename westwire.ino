@@ -4,7 +4,7 @@
 
 #define OE      D1
 #define DCDC    D2
-#define VERSION     "v1.0"
+#define VERSION     "v1.1"
 #define disable 0
 #define TINY_GSM_MODEM_UBLOX
 
@@ -14,8 +14,7 @@ int mqttConnectionFailures = 0;
 long lastReconnectAttempt = 0;
 String ID = String(ESP.getChipId(), HEX);
 const char* charId = ID.c_str();
-String connMsg=String("Sensor " + ID + " connected - "+VERSION);
-const char* charConnMsg=connMsg.c_str();
+
 
 // Set serial for for AT commands (to the module)
 #define SerialAT Serial
@@ -97,6 +96,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
 boolean mqttConnect() {
   SerialMon.print(F("Connecting to "));
   SerialMon.println(broker);
+  
+  String connMsg=String("Sensor " + ID + " connected - "+VERSION+"\n"+" IMEI:"+modem.getIMEI());
+  const char* charConnMsg=connMsg.c_str();
 
   // Connect to MQTT Broker
   boolean status = mqtt.connect(charId);
@@ -141,7 +143,7 @@ void setup() {
   // Set GSM module baud rate
   TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
   SerialAT.begin(115200);
-  delay(10000);
+  delay(1000);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
@@ -260,7 +262,7 @@ void loop() {
 // Checking transmission timer >> MQTT sending
  unsigned long t = millis();
  //SerialMon.println("millis - lastReconnect =" + String(t- lastReconnectAttempt));
-    if (t - lastReconnectAttempt > 300000L) {
+    if (t - lastReconnectAttempt > 60000L) {
             lastReconnectAttempt = t;
             char buffer[35];
 
