@@ -14,7 +14,7 @@ int mqttConnectionFailures = 0;
 long lastReconnectAttempt = 0;
 String ID = String(ESP.getChipId(), HEX);
 const char* charId = ID.c_str();
-String connMsg=String("Sensor " + ID + "connected");
+String connMsg=String("Sensor " + ID + " connected");
 const char* charConnMsg=connMsg.c_str();
 
 // Set serial for for AT commands (to the module)
@@ -28,7 +28,7 @@ const char* charConnMsg=connMsg.c_str();
 // SoftwareSerial SerialMon(D6, D2); // RX, TX
 
 // See all AT commands, if wanted
-#define DUMP_AT_COMMANDS 
+//#define DUMP_AT_COMMANDS 
 
 // Define the serial console for debug prints, if needed
 // #define TINY_GSM_DEBUG SerialMon
@@ -246,7 +246,7 @@ void setup() {
 
 void loop() {
 // Looping through 2.4 GHz channels
-  SerialMon.println(F("Scanning Wifi Channels"));
+  //SerialMon.println(F("Scanning Wifi Channels"));
   channel = 1;
   wifi_set_channel(channel);
   while (true) {
@@ -261,13 +261,13 @@ void loop() {
   }
 // Checking transmission timer >> MQTT sending
  unsigned long t = millis();
- SerialMon.println("millis - lastReconnect =" + String(t- lastReconnectAttempt));
+ //SerialMon.println("millis - lastReconnect =" + String(t- lastReconnectAttempt));
     if (t - lastReconnectAttempt > 60000L) {
             lastReconnectAttempt = t;
             char buffer[35];
 
             for (int u = 0; u < clients_known_count; u++){
-                String transmision ="{\"mac\":\"";
+                String transmision ="{\"ID\":\""+ID+"\",\"mac\":\"";
                 for (int i = 0; i < 6; i++) {
                        if (clients_known[u].station[i] < 0x10) {
                           transmision += "0";
