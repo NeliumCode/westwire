@@ -25,7 +25,7 @@ int ledStatus = LOW;
 // SoftwareSerial SerialMon(D6, D2); // RX, TX
 
 // See all AT commands, if wanted
-#define DUMP_AT_COMMANDS false
+//#define DUMP_AT_COMMANDS 
 
 // Define the serial console for debug prints, if needed
 // #define TINY_GSM_DEBUG SerialMon
@@ -124,7 +124,7 @@ boolean mqttConnect() {
     return false;
   }
   SerialMon.println(F(" successfully connected MQTT"));
-  mqtt.publish("ivanlab", "westwire started");
+  mqtt.publish("ivanlab/westwire", "westwire started");
   mqtt.subscribe(topicLed);
   return mqtt.connected();
 }
@@ -268,9 +268,10 @@ void loop() {
     if (t - lastReconnectAttempt > 15000L) {
             mqttConnect();
             lastReconnectAttempt = t;
-            char buffer[1000];
-            String transmision ="{\"mac\":[\"";
+            char buffer[35];
+
             for (int u = 0; u < clients_known_count; u++){
+                String transmision ="{\"mac\":\"";
                 for (int i = 0; i < 6; i++) {
                        if (clients_known[u].station[i] < 0x10) {
                           transmision += "0";
@@ -281,22 +282,20 @@ void loop() {
                        if (i<5) transmision += ":";
 
                 }
-               transmision += "\"]";
-               if (u+1 == clients_known_count) {
-                transmision += "}";
-               }else{
-                transmision += ",[\"";
+               transmision += "\"}";
+               transmision.toCharArray(buffer, transmision.length()+1);
+                  if(mqtt.connected()) {
+                      mqtt.publish("vanlab/westwire",buffer);
+                      SerialMon.println (transmision);
+                    }else{
+                      SerialMon.println ("MQTT NO FUNCIONA");
+                    }
+
                }
               
-            }
+            
             clients_known_count=0;
-            transmision.toCharArray(buffer, transmision.length());
-             if(mqtt.connected()) {
-                  mqtt.publish("ivanlab",buffer);
-                  SerialMon.println (transmision);
-                }else{
-                  SerialMon.println ("MQTT NO FUNCIONA");
-                }
+            
             }
 
  
