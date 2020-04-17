@@ -222,6 +222,9 @@ void setup() {
   int csq = modem.getSignalQuality();
   DBG("Signal quality:", csq);
 
+  String pos = modem.getGsmLocation();
+  DBG("Position:", pos);
+
   SerialMon.println("CCID:"+ ccid);
   SerialMon.println("IMEI:"+ imei);
   SerialMon.println("Operator:"+ cop);
