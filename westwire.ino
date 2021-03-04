@@ -47,9 +47,9 @@ const char* charId = ID.c_str();
 #define GSM_PIN ""
 
 // Your GPRS credentials, if any
-const char apn[] = "";
-const char gprsUser[] = "";
-const char gprsPass[] = "";
+const char apn[] = "telefonica.es";
+const char gprsUser[] = "telefonica";
+const char gprsPass[] = "telefonica";
 
 // Your WiFi connection credentials, if applicable
 //const char wifiSSID[] = "YourSSID";
@@ -280,6 +280,8 @@ void loop() {
                         }
                        if (i<5) transmision += ":";
                     }
+               transmision += "\",\"rssi\":\"";
+               transmision += String(clients_known[u].rssi, DEC);              
                transmision += "\"}";
                transmision.toCharArray(buffer, transmision.length()+1);
                if(!mqtt.connected()) mqttConnect();
