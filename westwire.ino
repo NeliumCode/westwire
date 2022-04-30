@@ -47,9 +47,9 @@ const char* charId = ID.c_str();
 #define GSM_PIN ""
 
 // Your GPRS credentials, if any
-const char apn[] = "";
-const char gprsUser[] = "";
-const char gprsPass[] = "";
+const char apn[] = "telefonica.es";
+const char gprsUser[] = "telefonica";
+const char gprsPass[] = "telefonica";
 
 // Your WiFi connection credentials, if applicable
 //const char wifiSSID[] = "YourSSID";
@@ -265,9 +265,9 @@ void loop() {
 // Checking transmission timer >> MQTT sending
  unsigned long t = millis();
  //SerialMon.println("millis - lastReconnect =" + String(t- lastReconnectAttempt));
-    if (t - lastReconnectAttempt > 300000L) {
+    if (t - lastReconnectAttempt > 60000L) {
             lastReconnectAttempt = t;
-            char buffer[75];
+            char buffer[35];
 
             for (int u = 0; u < clients_known_count; u++){
                 String transmision ="{\"ID\":\""+ID+"\",\"mac\":\"";
@@ -281,7 +281,7 @@ void loop() {
                        if (i<5) transmision += ":";
                     }
                transmision += "\",\"rssi\":\"";
-               transmision += String(clients_known[u].rssi, DEC);              
+               transmision += String(clients_known[u].rssi, HEX);              
                transmision += "\"}";
                transmision.toCharArray(buffer, transmision.length()+1);
                if(!mqtt.connected()) mqttConnect();
