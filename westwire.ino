@@ -158,23 +158,23 @@ void setup() {
   SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo);
   
-#if TINY_GSM_USE_GPRS
-  // Unlock your SIM card with a PIN if needed
-  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
-    modem.simUnlock(GSM_PIN);
-  }
-#endif
+  #if TINY_GSM_USE_GPRS
+    // Unlock your SIM card with a PIN if needed
+    if ( GSM_PIN && modem.getSimStatus() != 3 ) {
+      modem.simUnlock(GSM_PIN);
+    }
+  #endif
 
-#if TINY_GSM_USE_WIFI
-    // Wifi connection parameters must be set before waiting for the network
-  SerialMon.print(F("Setting SSID/password..."));
-  if (!modem.networkConnect(wifiSSID, wifiPass)) {
-    SerialMon.println(" fail");
-    delay(10000);
-    return;
-  }
-  SerialMon.println(" success");
-#endif
+  #if TINY_GSM_USE_WIFI
+      // Wifi connection parameters must be set before waiting for the network
+    SerialMon.print(F("Setting SSID/password..."));
+    if (!modem.networkConnect(wifiSSID, wifiPass)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
+    }
+    SerialMon.println(" success");
+  #endif
 
   SerialMon.print("Waiting for network...");
   
@@ -190,21 +190,21 @@ void setup() {
     SerialMon.println(F("Network connected"));
   }
 
-#if TINY_GSM_USE_GPRS
-  // GPRS connection parameters are usually set after network registration
-    SerialMon.print(F("Connecting to APN "));
-    SerialMon.print(apn);
-    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-      SerialMon.println(" fail");
-      delay(10000);
-      reboot();
-    }
-  SerialMon.println(F(" Successfully established APN context"));
+  #if TINY_GSM_USE_GPRS
+    // GPRS connection parameters are usually set after network registration
+      SerialMon.print(F("Connecting to APN "));
+      SerialMon.print(apn);
+      if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+        SerialMon.println(" fail");
+        delay(10000);
+        reboot();
+      }
+    SerialMon.println(F(" Successfully established APN context"));
 
-  if (modem.isGprsConnected()) {
-    SerialMon.println(F("GPRS connected"));
-  }
-#endif
+    if (modem.isGprsConnected()) {
+      SerialMon.println(F("GPRS connected"));
+    }
+  #endif
 
 
   String ccid = modem.getSimCCID();
@@ -248,7 +248,7 @@ void setup() {
 }
 
 void loop() {
-// Looping through 2.4 GHz channels
+ // Looping through 2.4 GHz channels
   //SerialMon.println(F("Scanning Wifi Channels"));
   channel = 1;
   wifi_set_channel(channel);
@@ -262,10 +262,13 @@ void loop() {
     }
     delay(1);                         // critical processing timeslice for NONOS SDK! No delay(0) yield()
   }
-// Checking transmission timer >> MQTT sending
+ // Checking transmission timer >> MQTT sending
+ if (!modem.isGprsConnected() {
+   reboot();
+ }
  unsigned long t = millis();
  //SerialMon.println("millis - lastReconnect =" + String(t- lastReconnectAttempt));
-    if (t - lastReconnectAttempt > 30000L) {
+    if (t - lastReconnectAttempt > 300000L) {
             lastReconnectAttempt = t;
             char buffer[75];
 
