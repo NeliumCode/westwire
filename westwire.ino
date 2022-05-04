@@ -4,7 +4,7 @@
 
 #define OE      D1
 #define DCDC    D2
-#define VERSION     "v1.1"
+#define VERSION     "v1.2"
 #define disable 0
 #define TINY_GSM_MODEM_UBLOX
 
@@ -47,9 +47,9 @@ const char* charId = ID.c_str();
 #define GSM_PIN ""
 
 // Your GPRS credentials, if any
-const char apn[] = "telefonica.es";
-const char gprsUser[] = "telefonica";
-const char gprsPass[] = "telefonica";
+const char apn[] = "";
+const char gprsUser[] = "";
+const char gprsPass[] = "";
 
 // Your WiFi connection credentials, if applicable
 //const char wifiSSID[] = "YourSSID";
@@ -265,9 +265,9 @@ void loop() {
 // Checking transmission timer >> MQTT sending
  unsigned long t = millis();
  //SerialMon.println("millis - lastReconnect =" + String(t- lastReconnectAttempt));
-    if (t - lastReconnectAttempt > 60000L) {
+    if (t - lastReconnectAttempt > 30000L) {
             lastReconnectAttempt = t;
-            char buffer[35];
+            char buffer[75];
 
             for (int u = 0; u < clients_known_count; u++){
                 String transmision ="{\"ID\":\""+ID+"\",\"mac\":\"";
@@ -281,7 +281,7 @@ void loop() {
                        if (i<5) transmision += ":";
                     }
                transmision += "\",\"rssi\":\"";
-               transmision += String(clients_known[u].rssi, HEX);              
+               transmision += String(clients_known[u].rssi, DEC);              
                transmision += "\"}";
                transmision.toCharArray(buffer, transmision.length()+1);
                if(!mqtt.connected()) mqttConnect();
