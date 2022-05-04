@@ -4,6 +4,7 @@
 
 #define OE      D1
 #define DCDC    D2
+#define LED     D5
 #define VERSION     "v1.2"
 #define disable 0
 #define TINY_GSM_MODEM_UBLOX
@@ -132,6 +133,7 @@ void setup() {
 
   pinMode(OE,OUTPUT);
   pinMode(DCDC,OUTPUT);               
+  pinMode(LED,OUTPUT);               
   digitalWrite(OE,LOW);                           
   digitalWrite(DCDC,HIGH);            
 
@@ -203,6 +205,12 @@ void setup() {
 
     if (modem.isGprsConnected()) {
       SerialMon.println(F("GPRS connected"));
+      for(counter = 2;counter <= 9;counter++) {
+        digitalWrite(LED,LOW);
+        delay(500);                         
+        digitalWrite(LED,HIGH); 
+        delay(500);  
+      }
     }
   #endif
 
@@ -289,9 +297,11 @@ void loop() {
                transmision.toCharArray(buffer, transmision.length()+1);
                if(!mqtt.connected()) mqttConnect();
                   if(mqtt.connected()) {
+                      digitalWrite(LED,HIGH); 
                       mqtt.publish(topicData,buffer);
                       SerialMon.println (transmision);
                     }else{
+                      digitalWrite(LED,LOW); 
                       SerialMon.println (F("NETWORK PROBLEMS - MQTT NOT RESPONDING"));
                     }
                }
