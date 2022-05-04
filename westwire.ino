@@ -205,7 +205,7 @@ void setup() {
 
     if (modem.isGprsConnected()) {
       SerialMon.println(F("GPRS connected"));
-      for(counter = 2;counter <= 9;counter++) {
+      for(int counter = 2;counter <= 9;counter++) {
         digitalWrite(LED,LOW);
         delay(500);                         
         digitalWrite(LED,HIGH); 
@@ -213,7 +213,6 @@ void setup() {
       }
     }
   #endif
-
 
   String ccid = modem.getSimCCID();
   DBG("CCID:", ccid);
@@ -251,8 +250,6 @@ void setup() {
   mqtt.setServer(broker, 1883);
   mqtt.setCallback(mqttCallback);
   mqttConnect();
-
-
 }
 
 void loop() {
@@ -271,7 +268,8 @@ void loop() {
     delay(1);                         // critical processing timeslice for NONOS SDK! No delay(0) yield()
   }
  // Checking transmission timer >> MQTT sending
- if (!modem.isGprsConnected() {
+ if (!modem.isGprsConnected()) {
+   delay(3000);
    reboot();
  }
  unsigned long t = millis();
