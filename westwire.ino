@@ -239,11 +239,11 @@ void setup() {
 
 
 
-  #wifi_set_opmode(STATION_MODE);            // Promiscuous works only with station mode
-  #wifi_set_channel(channel);
-  #wifi_promiscuous_enable(disable);
-  #wifi_set_promiscuous_rx_cb(promisc_cb);   // Set up promiscuous callback
-  #wifi_promiscuous_enable(1);
+  wifi_set_opmode(STATION_MODE);            // Promiscuous works only with station mode
+  wifi_set_channel(channel);
+  wifi_promiscuous_enable(disable);
+  wifi_set_promiscuous_rx_cb(promisc_cb);   // Set up promiscuous callback
+  wifi_promiscuous_enable(1);
 
 
   // MQTT Broker setup
